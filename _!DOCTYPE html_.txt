@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Economia de Adquirência</title>
+    <!-- Tailwind CSS CDN para estilização moderna e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonte Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        /* Cor de destaque SumUp (roxa/magenta) */
+        .sumup-color {
+            background-color: #551E7C; /* Cor principal */
+        }
+        .sumup-text {
+            color: #551E7C;
+        }
+        .sumup-hover:hover {
+            background-color: #6a3493;
+        }
+        /* Estilo para sliders */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #551E7C;
+            cursor: pointer;
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
+        
+        <!-- Cabeçalho (Header) -->
+        <header class="sumup-color p-6 text-white text-center rounded-t-2xl">
+            <h1 class="text-2xl sm:text-3xl font-bold">Simulador de Economia</h1>
+            <p class="text-sm sm:text-base opacity-90 mt-1">Ferramenta essencial para fechar vendas de valor.</p>
+        </header>
+
+        <main class="p-4 sm:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Coluna 1: Dados do Cliente e Volume -->
+            <section class="lg:col-span-2 space-y-6">
+                <h2 class="text-xl font-semibold sumup-text border-b pb-2">1. Faturamento e Divisão Atual</h2>
+                
+                <!-- Faturamento Mensal -->
+                <div>
+                    <label for="faturamentoTotal" class="block text-sm font-medium text-gray-700">Faturamento Mensal Total (Vendas em Cartão)</label>
+                    <div class="mt-1 flex rounded-md shadow-sm">
+                        <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">R$</span>
+                        <input type="number" id="faturamentoTotal" value="30000" min="0" oninput="calculateSavings()" class="flex-1 block w-full rounded-none rounded-r-md border-gray-300 p-2 focus:ring-sumup-color focus:border-sumup-color sm:text-sm">
+                    </div>
+                </div>
+
+                <!-- Sliders de Divisão -->
+                <div class="bg-gray-50 p-4 rounded-xl">
+                    <h3 class="text-lg font-medium text-gray-700 mb-4">Divisão Percentual do Volume</h3>
+                    
+                    <!-- Débito -->
+                    <div class="mb-4">
+                        <label for="percDebito" class="text-sm font-medium text-gray-700 flex justify-between items-center">
+                            <span>Débito:</span>
+                            <span id="percDebitoValue" class="font-bold text-sumup-text">30%</span>
+                        </label>
+                        <input type="range" id="percDebito" min="0" max="100" value="30" step="5" oninput="updateSliders()" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Crédito à Vista -->
+                    <div class="mb-4">
+                        <label for="percCreditoAVista" class="text-sm font-medium text-gray-700 flex justify-between items-center">
+                            <span>Crédito à Vista:</span>
+                            <span id="percCreditoAVistaValue" class="font-bold text-sumup-text">40%</span>
+                        </label>
+                        <input type="range" id="percCreditoAVista" min="0" max="100" value="40" step="5" oninput="updateSliders()" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Crédito Parcelado (Calculado) -->
+                    <div class="mb-2">
+                        <label class="text-sm font-medium text-gray-700 flex justify-between items-center">
+                            <span>Crédito Parcelado:</span>
+                            <span id="percCreditoParceladoValue" class="font-bold text-sumup-color">30%</span>
+                        </label>
+                        <div class="w-full h-2 bg-gray-300 rounded-lg mt-1"></div>
+                        <p class="text-xs text-gray-500 mt-1">O restante é automaticamente alocado em Parcelado.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Coluna 2: Comparação de Taxas -->
+            <section class="lg:col-span-1 space-y-6">
+                <h2 class="text-xl font-semibold sumup-text border-b pb-2">2. Comparação de Taxas (%)</h2>
+                
+                <div class="space-y-4">
+                    <!-- Taxas Atuais do Concorrente (Editável) -->
+                    <div class="bg-red-50 p-4 rounded-xl shadow">
+                        <h3 class="font-bold text-red-700 mb-3">Taxas Atuais (Concorrente)</h3>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-red-600">Débito (%)</label>
+                            <input type="number" id="taxaAtualDebito" value="1.99" min="0" step="0.01" oninput="calculateSavings()" class="w-full p-2 border border-red-300 rounded-lg text-sm">
+                            
+                            <label class="block text-xs font-medium text-red-600">Crédito à Vista (%)</label>
+                            <input type="number" id="taxaAtualCreditoAVista" value="4.50" min="0" step="0.01" oninput="calculateSavings()" class="w-full p-2 border border-red-300 rounded-lg text-sm">
+                            
+                            <label class="block text-xs font-medium text-red-600">Crédito Parcelado (3x) (%)</label>
+                            <input type="number" id="taxaAtualCreditoParcelado" value="6.99" min="0" step="0.01" oninput="calculateSavings()" class="w-full p-2 border border-red-300 rounded-lg text-sm">
+                        </div>
+                    </div>
+                    
+                    <!-- Taxas SumUp (Editável) -->
+                    <div class="bg-green-50 p-4 rounded-xl shadow border border-green-300">
+                        <h3 class="font-bold text-green-700 mb-3">Taxas SumUp (Sua Oferta)</h3>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-green-700">Débito (%)</label>
+                            <input type="number" id="taxaSumUpDebito" value="1.09" min="0" step="0.01" oninput="calculateSavings()" class="w-full p-2 border border-green-300 rounded-lg text-sm">
+                            
+                            <label class="block text-xs font-medium text-green-700">Crédito à Vista (%)</label>
+                            <input type="number" id="taxaSumUpCreditoAVista" value="3.09" min="0" step="0.01" oninput="calculateSavings()" class="w-full p-2 border border-green-300 rounded-lg text-sm">
+                            
+                            <label class="block text-xs font-medium text-green-700">Crédito Parcelado (3x) (%)</label>
+                            <input type="number" id="taxaSumUpCreditoParcelado" value="4.50" min="0" step="0.01" oninput="calculateSavings()" class="w-full p-2 border border-green-300 rounded-lg text-sm">
+                        </div>
+                        <p class="text-xs text-green-600 mt-2">Personalize as taxas da sua proposta SumUp.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Coluna 3: Resultados e Resumo (Sempre visível, fixo no mobile) -->
+        <section class="p-4 sm:p-8 bg-gray-100 border-t-4 border-sumup-color sticky bottom-0 z-10">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">3. Resultado da Economia (Dinheiro no Bolso)</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                <!-- Custo Atual -->
+                <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500">
+                    <p class="text-sm text-gray-500 font-medium">Custo Atual (Mensal)</p>
+                    <p id="custoAtual" class="text-2xl font-bold text-red-600 mt-1">R$ 0,00</p>
+                </div>
+                
+                <!-- Custo SumUp -->
+                <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-sumup-color">
+                    <p class="text-sm text-gray-500 font-medium">Custo SumUp (Mensal)</p>
+                    <p id="custoSumUp" class="text-2xl font-bold sumup-text mt-1">R$ 0,00</p>
+                </div>
+
+                <!-- Economia Mensal (Cor ajustada para Preto/Vermelho) -->
+                <div id="economiaMensalContainer" class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-500 md:col-span-2 lg:col-span-1">
+                    <p class="text-sm text-gray-500 font-medium">Economia Mensal Líquida</p>
+                    <p id="economiaMensal" class="text-3xl font-extrabold text-gray-900 mt-1">R$ 0,00</p>
+                </div>
+
+            </div>
+
+            <!-- Economia Anual em Destaque (AGORA EM FUNDO BRANCO PARA DESTAQUE PRETO/VERMELHO) -->
+            <div class="mt-6 bg-white border-4 border-sumup-color p-5 rounded-xl text-center shadow-2xl">
+                <p class="text-xl font-medium uppercase sumup-text">Economia Anual Total (12 meses)</p>
+                <p id="economiaAnual" class="text-5xl font-extrabold mt-1 text-gray-900">R$ 0,00</p>
+                <p class="text-sm text-gray-500 mt-2">Esse é o lucro que você está deixando de ter com a concorrência!</p>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        /**
+         * Formata um número para o padrão monetário brasileiro (R$ X.XXX,XX).
+         * @param {number} value
+         */
+        const formatCurrency = (value) => {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        };
+
+        /**
+         * Atualiza os sliders de Débito e Crédito à Vista e ajusta o Parcelado.
+         */
+        function updateSliders() {
+            const percDebitoInput = document.getElementById('percDebito');
+            const percCreditoAVistaInput = document.getElementById('percCreditoAVista');
+            
+            let percDebito = parseFloat(percDebitoInput.value) || 0;
+            let percCreditoAVista = parseFloat(percCreditoAVistaInput.value) || 0;
+
+            // Garante que a soma não exceda 100% (o restante é Parcelado)
+            if (percDebito + percCreditoAVista > 100) {
+                // Ajusta o slider que não estava ativo
+                if (document.activeElement.id === 'percDebito') {
+                    percCreditoAVista = 100 - percDebito;
+                    percCreditoAVistaInput.value = percCreditoAVista;
+                } else { // Se Credito à Vista foi ajustado, ajusta o Debito
+                    percDebito = 100 - percCreditoAVista;
+                    percDebitoInput.value = percDebito;
+                }
+            }
+
+            const percCreditoParcelado = 100 - percDebito - percCreditoAVista;
+            
+            // Atualiza os valores visuais
+            document.getElementById('percDebitoValue').textContent = `${percDebito.toFixed(0)}%`;
+            document.getElementById('percCreditoAVistaValue').textContent = `${percCreditoAVista.toFixed(0)}%`;
+            document.getElementById('percCreditoParceladoValue').textContent = `${percCreditoParcelado.toFixed(0)}%`;
+
+            calculateSavings();
+        }
+
+
+        /**
+         * Realiza todos os cálculos de custo e economia.
+         */
+        function calculateSavings() {
+            // 1. Coleta de Dados
+            const faturamentoTotal = parseFloat(document.getElementById('faturamentoTotal').value) || 0;
+            
+            // Volumes (Porcentagens lidas dos Sliders)
+            const percDebito = parseFloat(document.getElementById('percDebito').value) || 0;
+            const percCreditoAVista = parseFloat(document.getElementById('percCreditoAVista').value) || 0;
+            const percCreditoParcelado = 100 - percDebito - percCreditoAVista; // É sempre o restante
+            
+            // Taxas Atuais (Concorrente)
+            const taxaAtualDebito = parseFloat(document.getElementById('taxaAtualDebito').value) || 0;
+            const taxaAtualCreditoAVista = parseFloat(document.getElementById('taxaAtualCreditoAVista').value) || 0;
+            const taxaAtualCreditoParcelado = parseFloat(document.getElementById('taxaAtualCreditoParcelado').value) || 0;
+
+            // Taxas SumUp (EDITÁVEIS)
+            const taxaSumUpDebito = parseFloat(document.getElementById('taxaSumUpDebito').value) || 0;
+            const taxaSumUpCreditoAVista = parseFloat(document.getElementById('taxaSumUpCreditoAVista').value) || 0;
+            const taxaSumUpCreditoParcelado = parseFloat(document.getElementById('taxaSumUpCreditoParcelado').value) || 0;
+
+
+            // Prevenção de valores inválidos/negativos
+            if (faturamentoTotal < 0 || percCreditoParcelado < 0) return;
+
+            // 2. Cálculo dos Volumes em R$
+            const volDebito = faturamentoTotal * (percDebito / 100);
+            const volCreditoAVista = faturamentoTotal * (percCreditoAVista / 100);
+            const volCreditoParcelado = faturamentoTotal * (percCreditoParcelado / 100);
+
+            // 3. Cálculo dos Custos Atuais
+            const custoAtualDebito = volDebito * (taxaAtualDebito / 100);
+            const custoAtualCreditoAVista = volCreditoAVista * (taxaAtualCreditoAVista / 100);
+            const custoAtualCreditoParcelado = volCreditoParcelado * (taxaAtualCreditoParcelado / 100);
+            
+            const custoTotalAtual = custoAtualDebito + custoAtualCreditoAVista + custoAtualCreditoParcelado;
+
+            // 4. Cálculo dos Custos SumUp (Usando as taxas editáveis)
+            const custoSumUpDebito = volDebito * (taxaSumUpDebito / 100);
+            const custoSumUpCreditoAVista = volCreditoAVista * (taxaSumUpCreditoAVista / 100);
+            const custoSumUpCreditoParcelado = volCreditoParcelado * (taxaSumUpCreditoParcelado / 100);
+
+            const custoTotalSumUp = custoSumUpDebito + custoSumUpCreditoAVista + custoSumUpCreditoParcelado;
+
+            // 5. Cálculo da Economia
+            const economiaMensal = custoTotalAtual - custoTotalSumUp;
+            const economiaAnual = economiaMensal * 12;
+
+            // 6. Atualização da UI
+            document.getElementById('custoAtual').textContent = formatCurrency(custoTotalAtual);
+            document.getElementById('custoSumUp').textContent = formatCurrency(custoTotalSumUp);
+            
+            document.getElementById('economiaMensal').textContent = formatCurrency(economiaMensal);
+            document.getElementById('economiaAnual').textContent = formatCurrency(economiaAnual);
+            
+            // --- Lógica de Cores da Economia Mensal (Preto/Vermelho) ---
+            const economiaElement = document.getElementById('economiaMensal');
+            const economiaContainer = document.getElementById('economiaMensalContainer');
+
+            // Remove as classes de cor anteriores
+            economiaElement.classList.remove('text-red-600', 'text-gray-900');
+            economiaContainer.classList.remove('border-red-500', 'border-gray-500');
+
+            if (economiaMensal < 0) {
+                // Prejuízo/Custo Maior: Vermelho
+                economiaElement.classList.add('text-red-600');
+                economiaContainer.classList.add('border-red-500');
+            } else {
+                // Economia/Lucro: Preto
+                economiaElement.classList.add('text-gray-900');
+                economiaContainer.classList.add('border-gray-500');
+            }
+            
+            // 7. --- Lógica de Cores da Economia Anual (Preto/Vermelho) ---
+            const economiaAnualElement = document.getElementById('economiaAnual');
+
+            // Remove as classes de cor anteriores
+            economiaAnualElement.classList.remove('text-red-600', 'text-gray-900');
+
+            if (economiaAnual < 0) {
+                // Prejuízo/Custo Maior: Vermelho
+                economiaAnualElement.classList.add('text-red-600');
+            } else {
+                // Economia/Lucro: Preto
+                economiaAnualElement.classList.add('text-gray-900');
+            }
+        }
+
+        // Inicializa o simulador ao carregar
+        window.onload = () => {
+            updateSliders();
+        };
+
+    </script>
+</body>
+</html>
